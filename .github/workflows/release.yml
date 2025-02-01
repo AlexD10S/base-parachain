@@ -109,7 +109,7 @@ jobs:
         if: contains(matrix.platform.target, 'linux')
         run: |
           sudo apt-get update
-          sudo apt-get install -y protobuf-compiler gcc-aarch64-linux-gnu
+          sudo apt-get install -y protobuf-compiler gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
           protoc --version
 
       - name: Install dependencies (macOS)
@@ -129,7 +129,7 @@ jobs:
           mkdir -p artifacts
           cp ${{ env.path }}/parachain-template-node artifacts/
           cd artifacts
-          if contains('${{ matrix.platform.target }}', 'linux'); then
+          if [[ "${{ matrix.platform.target }}" == *"linux"* ]]; then
             sha256sum parachain-template-node > parachain-template-node.sha256
           else
             shasum -a 256 parachain-template-node > parachain-template-node.sha256

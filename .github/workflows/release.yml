@@ -29,29 +29,28 @@ jobs:
           ref: ${{ github.event.inputs.ref }}
 
       - name: Set Runtime
-        run: echo "RUNTIME=dev" >> $GITHUB_ENV
+        run: echo "RUNTIME=runtime" >> $GITHUB_ENV
 
       - name: Cache runtime target dir
         uses: actions/cache@v4
         with:
-          path: "${{ github.workspace }}/runtime/${{ env.RUNTIME }}/target"
-          key: srtool-target-${{ env.RUNTIME }}-${{ github.sha }}
+          path: "${{ github.workspace }}/runtime/target"
+          key: srtool-target-${{ github.sha }}
           restore-keys: |
-            srtool-target-${{ env.RUNTIME }}-
             srtool-target-
 
-      - name: Build ${{ env.RUNTIME }} runtime
+      - name: Build runtime
         id: srtool_build
         uses: chevdor/srtool-actions@v0.9.2
         env:
           BUILD_OPTS: "--features on-chain-release-build"
         with:
-          chain: ${{ env.RUNTIME }}
+          chain: "parachain"
           package: "parachain-runtime"
-          runtime_dir: "runtime/${{ env.RUNTIME }}"
+          runtime_dir: "runtime"
 
       - name: Store srtool digest to disk
-        run: echo '${{ steps.srtool_build.outputs.json }}' | jq . > ${{ env.RUNTIME }}-srtool-digest.json
+        run: echo '${{ steps.srtool_build.outputs.json }}' | jq . > srtool-digest.json
 
       - name: Install subwasm ${{ env.SUBWASM_VERSION }}
         run: |
@@ -62,22 +61,22 @@ jobs:
       - name: Show Runtime information
         run: |
           subwasm info ${{ steps.srtool_build.outputs.wasm }}
-          subwasm --json info ${{ steps.srtool_build.outputs.wasm }} > ${{ env.RUNTIME }}-info.json
-          subwasm --json info ${{ steps.srtool_build.outputs.wasm_compressed }} > ${{ env.RUNTIME }}-info_compressed.json
+          subwasm --json info ${{ steps.srtool_build.outputs.wasm }} > runtime-info.json
+          subwasm --json info ${{ steps.srtool_build.outputs.wasm_compressed }} > runtime-info_compressed.json
 
       - name: Extract the metadata
         run: |
           subwasm meta ${{ steps.srtool_build.outputs.wasm }}
-          subwasm --json meta ${{ steps.srtool_build.outputs.wasm }} > ${{ env.RUNTIME }}-metadata.json
+          subwasm --json meta ${{ steps.srtool_build.outputs.wasm }} > runtime-metadata.json
 
       - name: Archive Subwasm results
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.RUNTIME }}-info
+          name: runtime-info
           path: |
-            ${{ env.RUNTIME }}-info.json
-            ${{ env.RUNTIME }}-info_compressed.json
-            ${{ env.RUNTIME }}-metadata.json
+            runtime-info.json
+            runtime-info_compressed.json
+            runtime-metadata.json
 
   build-node:
     runs-on: ${{ matrix.platform.os }}
@@ -96,7 +95,7 @@ jobs:
             target: x86_64-apple-darwin
     env:
       RUSTFLAGS: "${{ matrix.platform.target == 'aarch64-unknown-linux-gnu' && '-C linker=aarch64-linux-gnu-gcc' || '' }}"
-      path: "target/${{ matrix.platform.target }}/production"
+      path: "target/${{ matrix.platform.target }}/release"
       package: "parachain-template-node-${{ matrix.platform.target }}.tar.gz"
 
     steps:
@@ -110,7 +109,7 @@ jobs:
         if: contains(matrix.platform.target, 'linux')
         run: |
           sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
+          sudo apt-get install -y protobuf-compiler crossbuild-essential-arm64 aarch64-linux-gnu-gcc
           protoc --version
 
       - name: Install dependencies (macOS)

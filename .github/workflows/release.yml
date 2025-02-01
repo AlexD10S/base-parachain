@@ -46,7 +46,7 @@ jobs:
           BUILD_OPTS: "--features on-chain-release-build"
         with:
           chain: "parachain"
-          package: "parachain-runtime"
+          package: "parachain-template-runtime" # ✅ Corrected package name
           runtime_dir: "runtime"
 
       - name: Store srtool digest to disk
@@ -109,7 +109,7 @@ jobs:
         if: contains(matrix.platform.target, 'linux')
         run: |
           sudo apt-get update
-          sudo apt-get install -y protobuf-compiler crossbuild-essential-arm64 aarch64-linux-gnu-gcc
+          sudo apt-get install -y protobuf-compiler gcc-aarch64-linux-gnu
           protoc --version
 
       - name: Install dependencies (macOS)

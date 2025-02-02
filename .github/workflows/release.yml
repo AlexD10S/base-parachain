@@ -83,7 +83,7 @@ jobs:
           path: artifacts/${{ env.package }}
 
   create-release:
-    needs: [build-node, srtool]
+    needs: build-node
     runs-on: ubuntu-latest
     permissions:
       contents: write

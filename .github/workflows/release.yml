@@ -18,52 +18,6 @@ on:
         required: true
 
 jobs:
-  srtool:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.ref }}
-
-      - name: Set Runtime
-        run: echo "RUNTIME=runtime" >> $GITHUB_ENV
-
-      - name: Cache runtime target dir
-        uses: actions/cache@v4
-        with:
-          path: "${{ github.workspace }}/runtime/target"
-          key: srtool-target-${{ github.sha }}
-          restore-keys: |
-            srtool-target-
-
-      - name: Build runtime
-        id: srtool_build
-        uses: chevdor/srtool-actions@v0.9.2
-        env:
-          BUILD_OPTS: "--features on-chain-release-build"
-        with:
-          chain: "parachain"
-          package: "parachain-template-runtime"
-          runtime_dir: "runtime"
-
-      - name: Store srtool digest to disk
-        run: echo '${{ steps.srtool_build.outputs.json }}' | jq . > srtool-digest.json
-
-      - name: Copy artifacts for release
-        run: |
-          mkdir -p release-files
-          cp ${{ steps.srtool_build.outputs.wasm_compressed }} release-files/
-          cp srtool-digest.json release-files/
-
-      - name: Upload SRTool Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: runtime-info
-          path: release-files/
-
   build-node:
     runs-on: ${{ matrix.platform.os }}
     permissions:
@@ -146,7 +100,6 @@ jobs:
           release_name: "${{ github.event.inputs.release_name }}"
           target_commitish: ${{ github.event.inputs.ref }}
           generate_release_notes: true
+          body: " "
           files: |
             release-artifacts/**/*.tar.gz
-            release-artifacts/srtool-digest.json
-            release-artifacts/*.wasm

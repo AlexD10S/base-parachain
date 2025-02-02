@@ -19,7 +19,6 @@ on:
 
 jobs:
   create-release:
-    needs: build-node
     runs-on: ubuntu-latest
     permissions:
       contents: write

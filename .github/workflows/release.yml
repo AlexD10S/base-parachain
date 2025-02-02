@@ -158,21 +158,10 @@ jobs:
       - name: Create a GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          append_body: true
           tag_name: ${{ github.event.inputs.release_tag }}
           release_name: ${{ github.event.inputs.release_name }}
           target_commitish: ${{ github.event.inputs.ref }}
-          body: |
-            ## Runtime: `${{ env.RUNTIME }}`
-            ```
-            🏋️ Runtime Size:           ${{ fromJSON(steps.srtool_build.outputs.json).runtimes.compressed.subwasm.size }} bytes
-            🔥 Core Version:           ${{ fromJSON(steps.srtool_build.outputs.json).runtimes.compressed.subwasm.core_version.specName }}-${{ fromJSON(steps.srtool_build.outputs.json).runtimes.compressed.subwasm.core_version.specVersion }}
-            🎁 Metadata version:       V${{ fromJSON(steps.srtool_build.outputs.json).runtimes.compressed.subwasm.metadata_version }}
-            🗳️ system.setCode hash:    ${{ fromJSON(steps.srtool_build.outputs.json).runtimes.compressed.subwasm.proposal_hash }}
-            🗳️ authorizeUpgrade hash:  ${{ fromJSON(steps.srtool_build.outputs.json).runtimes.compressed.subwasm.parachain_authorize_upgrade_hash }}
-            🗳️ Blake2-256 hash:        ${{ fromJSON(steps.srtool_build.outputs.json).runtimes.compressed.subwasm.blake2_256 }}
-            📦 IPFS:                   ${{ fromJSON(steps.srtool_build.outputs.json).runtimes.compressed.subwasm.ipfs_hash }}
-            ```
+          generate_release_notes: true
           files: |
             release-artifacts/**/*.tar.gz
             release-artifacts/srtool-digest.json

@@ -11,7 +11,7 @@ on:
         required: true
         default: "main"
       release_name:
-        description: "Name of the new release (e.g Polkadot stable2412)"
+        description: "Name of the new release (e.g. Polkadot stable2412)"
         required: true
       release_tag:
         description: "Tag of the new release (e.g. polkadot-stable2412)"
@@ -46,39 +46,23 @@ jobs:
           BUILD_OPTS: "--features on-chain-release-build"
         with:
           chain: "parachain"
-          package: "parachain-template-runtime" # ✅ Corrected package name
+          package: "parachain-template-runtime"
           runtime_dir: "runtime"
 
       - name: Store srtool digest to disk
         run: echo '${{ steps.srtool_build.outputs.json }}' | jq . > srtool-digest.json
 
-      - name: Install subwasm ${{ env.SUBWASM_VERSION }}
+      - name: Copy artifacts for release
         run: |
-          wget https://github.com/chevdor/subwasm/releases/download/v${{ env.SUBWASM_VERSION }}/subwasm_linux_amd64_v${{ env.SUBWASM_VERSION }}.deb
-          sudo dpkg -i subwasm_linux_amd64_v${{ env.SUBWASM_VERSION }}.deb
-          subwasm --version
+          mkdir -p release-files
+          cp ${{ steps.srtool_build.outputs.wasm_compressed }} release-files/
+          cp srtool-digest.json release-files/
 
-      - name: Show Runtime information
-        run: |
-          subwasm info ${{ steps.srtool_build.outputs.wasm }}
-          subwasm --json info ${{ steps.srtool_build.outputs.wasm }} > runtime-info.json
-          subwasm --json info ${{ steps.srtool_build.outputs.wasm_compressed }} > runtime-info_compressed.json
-
-      - name: Extract the metadata
-        run: |
-          subwasm meta ${{ steps.srtool_build.outputs.wasm }}
-          subwasm --json meta ${{ steps.srtool_build.outputs.wasm }} > runtime-metadata.json
-
-      - name: Archive Subwasm results
+      - name: Upload SRTool Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: runtime-info
-          path: |
-            runtime-info.json
-            runtime-info_compressed.json
-            runtime-metadata.json
-            srtool-digest.json
-            ${{ steps.srtool_build.outputs.wasm_compressed }}
+          path: release-files/
 
   build-node:
     runs-on: ${{ matrix.platform.os }}
@@ -155,11 +139,11 @@ jobs:
         with:
           path: release-artifacts
 
-      - name: Create a GitHub Release
+      - name: Publish Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.event.inputs.release_tag }}
-          release_name: ${{ github.event.inputs.release_name }}
+          release_name: "${{ github.event.inputs.release_name }}"
           target_commitish: ${{ github.event.inputs.ref }}
           generate_release_notes: true
           files: |
